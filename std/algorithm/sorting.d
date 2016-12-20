@@ -611,7 +611,7 @@ Keynote), Andrei Alexandrescu.
 */
 size_t pivotPartition(alias less = "a < b", Range)
 (Range r, size_t pivot)
-if (isRandomAccessRange!Range && hasLength!Range && hasSlicing!Range)
+if (isRandomAccessRange!Range && hasLength!Range && hasSlicing!Range && hasMobileElements!Range && hasAssignableElements!Range)
 {
     assert(pivot < r.length || r.length == 0 && pivot == 0);
     if (r.length <= 1) return 0;
@@ -631,7 +631,7 @@ if (isRandomAccessRange!Range && hasLength!Range && hasSlicing!Range)
         auto p = r[0];
         // Plant the pivot in the end as well as a sentinel
         size_t lo = 0, hi = r.length - 1;
-        auto save = move(r[hi]);
+        auto save = moveAt(r, hi);
         r[hi] = p; // Vacancy is in r[$ - 1] now
         // Start process
         for (;;)
@@ -3246,6 +3246,19 @@ void topNImpl(alias less, R)(R r, size_t n, ref bool useSampling)
     auto n = 4;
     topN!"a < b"(v, n);
     assert(v[n] == 9);
+}
+
+// bug 8341
+@safe unittest
+{
+    import std.range : zip;
+    import std.conv;
+
+    int[] r1 = [1,2,3,4];
+    string[] r2 = ["d","c","b","a"];
+    topN!"a > b"(zip(r1, r2), 2);
+    assert(r1[2] == 2);
+    assert(r2[2] == "c");
 }
 
 private size_t topNPartition(alias lp, R)(R r, size_t n, bool useSampling)
